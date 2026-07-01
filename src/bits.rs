@@ -67,5 +67,5 @@ macro_rules! impl_bits_u16 {
     };
 }
 
-impl_bits_u8!(4, 5, 6, 7, 8);
+impl_bits_u8!(3, 4, 5, 6, 7, 8);
 impl_bits_u16!(9, 10, 11, 12, 13, 14, 15, 16);
