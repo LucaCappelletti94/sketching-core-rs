@@ -23,7 +23,7 @@ pub use bits::*;
 pub use constants::{One, Zero};
 pub use correction::{sigma, tau, x_div_expm1};
 pub use estimator::CardinalityEstimator;
-pub use hasher::HasherType;
+pub use hasher::{DefaultBuildHasher, DefaultHasher, HasherType};
 pub use matrix::Matrix;
 pub use number::{FloatOps, Number, PositiveInteger};
 pub use optimize::bisect_root;
@@ -33,7 +33,7 @@ pub use packed::{
     split_packed_index, Packed, PackedIter,
 };
 pub use precisions::*;
-pub use random::{iter_random_values, iter_var_len_random_values, splitmix64};
+pub use random::{iter_random_values, iter_var_len_random_values, splitmix64, SplitMix64};
 pub use shape::{PackedShape, Words};
 pub use sketches::{
     inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
@@ -46,7 +46,7 @@ pub mod prelude {
     pub use crate::constants::{One, Zero};
     pub use crate::correction::{sigma, tau, x_div_expm1};
     pub use crate::estimator::CardinalityEstimator;
-    pub use crate::hasher::HasherType;
+    pub use crate::hasher::{DefaultBuildHasher, DefaultHasher, HasherType};
     pub use crate::matrix::Matrix;
     pub use crate::number::{FloatOps, Number, PositiveInteger};
     pub use crate::optimize::bisect_root;
@@ -56,7 +56,9 @@ pub mod prelude {
         split_packed_index, Packed, PackedIter,
     };
     pub use crate::precisions::*;
-    pub use crate::random::{iter_random_values, iter_var_len_random_values, splitmix64};
+    pub use crate::random::{
+        iter_random_values, iter_var_len_random_values, splitmix64, SplitMix64,
+    };
     pub use crate::shape::{PackedShape, Words};
     pub use crate::sketches::{
         inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,

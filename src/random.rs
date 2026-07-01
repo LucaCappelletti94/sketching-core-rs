@@ -81,6 +81,75 @@ pub fn iter_var_len_random_values<V: VariableWord>(
         unsafe { V::unchecked_from_u64(state & V::MASK) % actual_maximal_value }
     })
 }
+/// Stateful `SplitMix64` PRNG. Single `u64` of state; steps the underlying permutation from
+/// [`splitmix64`] and layers Lemire-style bounded draws and inverse-CDF exponentials on top.
+#[derive(Debug, Clone, Copy)]
+pub struct SplitMix64 {
+    state: u64,
+}
+
+impl SplitMix64 {
+    /// Whitening constant `XORed` into the seed so the per-instance PRNG output cannot tail-share
+    /// with another instance whose input hash is a [`splitmix64`] step away from this one. Without
+    /// it, callers feeding a [`splitmix64`]-derived hash stream pull a ~17 percent under-estimate
+    /// bias out of the register state because consecutive elements' walks overlap. The XOR is
+    /// non-commutative with the `SplitMix64` round mixing, so two chain-related inputs no longer
+    /// produce chain-related seeds. Any non-zero constant outside the `SplitMix64` family works.
+    const SEED_MIXER: u64 = 0xCBF2_9CE4_8422_2325;
+
+    /// Seed from a 64-bit element hash. The hash is `XORed` with the whitening constant so a
+    /// [`splitmix64`]-derived caller stream cannot share a PRNG output tail with this instance.
+    #[inline]
+    #[must_use]
+    pub const fn new(hash: u64) -> Self {
+        Self {
+            state: hash ^ Self::SEED_MIXER,
+        }
+    }
+
+    /// Next 64 bits of output. Advances state by one step of the underlying permutation.
+    #[inline]
+    pub fn next_u64(&mut self) -> u64 {
+        self.state = splitmix64(self.state);
+        self.state
+    }
+
+    /// Uniform `f64` in `[0, 1)` from the top 53 bits.
+    #[inline]
+    pub fn next_f64(&mut self) -> f64 {
+        <f64 as crate::FloatOps>::integer_exp2_minus(53) * (self.next_u64() >> 11) as f64
+    }
+
+    /// Uniform `u32` in `[0, n)` via Lemire's rejection method.
+    ///
+    /// # Panics
+    /// Panics in debug builds when `n == 0`.
+    #[inline]
+    #[allow(clippy::many_single_char_names)]
+    pub fn bounded_u32(&mut self, n: u32) -> u32 {
+        debug_assert!(n > 0);
+        let mut x = self.next_u64() as u32;
+        let mut m = u64::from(x) * u64::from(n);
+        let mut l = m as u32;
+        if l < n {
+            let t = n.wrapping_neg() % n;
+            while l < t {
+                x = self.next_u64() as u32;
+                m = u64::from(x) * u64::from(n);
+                l = m as u32;
+            }
+        }
+        (m >> 32) as u32
+    }
+
+    /// `Exp(1)` sample via inverse-CDF: `-ln(1 - U)`, stable near `U = 0` thanks to `ln_1p`.
+    #[inline]
+    pub fn next_exp1(&mut self) -> f64 {
+        let u = self.next_f64();
+        -<f64 as crate::FloatOps>::ln_1p(-u)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,5 +270,47 @@ mod tests {
             bits_diff >= 20,
             "Expected significant bit difference, got {bits_diff}"
         );
+    }
+
+    #[test]
+    fn splitmix64_wrapper_deterministic_from_seed() {
+        let mut a = SplitMix64::new(42);
+        let mut b = SplitMix64::new(42);
+        for _ in 0..1024 {
+            assert_eq!(a.next_u64(), b.next_u64());
+        }
+    }
+
+    #[test]
+    fn splitmix64_wrapper_f64_in_unit_interval() {
+        let mut r = SplitMix64::new(12345);
+        for _ in 0..10_000 {
+            let x = r.next_f64();
+            assert!((0.0..1.0).contains(&x), "out of [0, 1): {x}");
+        }
+    }
+
+    #[test]
+    fn splitmix64_wrapper_bounded_u32_in_range() {
+        let mut r = SplitMix64::new(99);
+        for n in [1_u32, 2, 3, 5, 17, 1_000, 65_536, u32::MAX] {
+            for _ in 0..512 {
+                assert!(r.bounded_u32(n) < n);
+            }
+        }
+    }
+
+    #[test]
+    fn splitmix64_wrapper_exp1_sample_mean_near_one() {
+        let mut r = SplitMix64::new(7);
+        let mut sum = 0.0;
+        let n = 50_000;
+        for _ in 0..n {
+            let e = r.next_exp1();
+            assert!(e >= 0.0);
+            sum += e;
+        }
+        let mean = sum / f64::from(n);
+        assert!((mean - 1.0).abs() < 0.05, "mean {mean} off from 1");
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "sketching-core"
-version = "0.4.0"
+version = "0.5.0"
 rust-version = "1.75.0"
 edition = "2021"
 authors = ["Luca Cappelletti <cappelletti.luca94@gmail.com>"]
