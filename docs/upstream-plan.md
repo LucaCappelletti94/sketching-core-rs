@@ -364,8 +364,8 @@ Fill in as phases execute.
 
 | Phase | Date | `sketching-core` tag | `setsketch` pin | `hyperloglog-rs` pin | `hyperlogloglog-rs` pin | Notes |
 |---|---|---|---|---|---|---|
-| 0 | pending | (unchanged) | (unchanged) | (unchanged) | (unchanged) | |
-| 1 | pending | v0.2.0 | | | | |
+| 0 | 2026-07-01 | (unchanged) | (unchanged) | `hyperloglog-rs` 62291f3 | (unchanged) | 0.1 deleted six stale files. 0.2 no-op (no stale files). 0.3 blocked: stdlib `Default for [T; N]` is still N ≤ 32 on rustc 1.98 nightly, `Words<N>` and `Slots<N>` remain load-bearing. |
+| 1 | 2026-07-01 | v0.2.0 (c38a2f75) | c38a2f75 | c38a2f75 | c38a2f75 | Landed as one sketching-core commit ffc875e (four items combined). Consumers switched to `git + rev` pins with a local `[patch]` for dev. |
 | 2 | pending | v0.3.0 | | | | |
 | 3 | pending | v0.4.0 | | | | |
 | 4 | pending | v0.5.0 | | | | |
