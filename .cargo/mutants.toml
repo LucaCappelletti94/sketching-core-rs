@@ -1,0 +1,3 @@
+# cargo-mutants configuration
+# Skip calls that are expensive or not meaningful to mutate
+skip_calls = ["with_capacity"]

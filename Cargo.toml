@@ -1,0 +1,64 @@
+[package]
+name = "sketching-core"
+version = "0.1.0"
+rust-version = "1.75.0"
+edition = "2021"
+authors = ["Luca Cappelletti <cappelletti.luca94@gmail.com>"]
+description = "Shared primitives for probabilistic cardinality sketches."
+homepage = "https://github.com/LucaCappelletti94/sketching-core-rs"
+repository = "https://github.com/LucaCappelletti94/sketching-core-rs"
+license = "MIT"
+keywords = ["sketch", "probabilistic", "no-std", "cardinality"]
+readme = "README.md"
+categories = ["no-std", "algorithms", "science"]
+exclude = [".github/", ".cargo/", ".gitignore"]
+
+[dependencies]
+paste = "1.0.15"
+serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+
+
+[features]
+default = []
+alloc = []
+serde = ["dep:serde"]
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+
+# Pedantic overrides: too noisy for a library
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+module_name_repetitions = "allow"
+
+
+# Deny: correctness and quality
+indexing_slicing = "allow"
+unwrap_used = "deny"
+expect_used = "deny"
+todo = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+
+# Allow: inherent to math/bit-manipulation libraries
+arithmetic_side_effects = "allow"
+panic = "allow"
+
+# Allow: acceptable in test code
+float_cmp = "allow"
+bool_comparison = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_lossless = "allow"
+legacy_numeric_constants = "allow"
+useless_conversion = "allow"
+unnecessary_cast = "allow"
+uninlined_format_args = "allow"
+manual_range_contains = "allow"
