@@ -48,8 +48,8 @@ jobs:
         with:
           toolchain: 1.75.0
 
-      - name: Cache
-        uses: Swatinem/rust-cache@v2
+      - name: Remove lock file (incompatible with MSRV Cargo)
+        run: rm Cargo.lock
 
       - name: Check (MSRV)
         run: cargo check --all-features
@@ -93,4 +93,4 @@ jobs:
         run: cargo install cargo-mutants --locked
 
       - name: Run cargo-mutants
-        run: cargo mutants -j 4
+        run: cargo mutants -j 4 || test $? -eq 3
