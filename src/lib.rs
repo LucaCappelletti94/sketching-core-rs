@@ -6,9 +6,12 @@ extern crate alloc;
 
 mod bits;
 mod constants;
+mod correction;
 mod estimator;
+mod hasher;
 mod matrix;
 mod number;
+mod optimize;
 mod packed;
 mod precisions;
 mod random;
@@ -17,12 +20,16 @@ mod variable_word;
 
 pub use bits::*;
 pub use constants::{One, Zero};
+pub use correction::{sigma, tau, x_div_expm1};
 pub use estimator::CardinalityEstimator;
+pub use hasher::HasherType;
 pub use matrix::Matrix;
 pub use number::{FloatOps, Number, PositiveInteger};
+pub use optimize::bisect_root;
 pub use packed::{
-    extract_bridge_value_from_words, extract_value_from_words, split_packed_index, Packed,
-    PackedIter,
+    extract_bridge_value_from_word, extract_bridge_value_from_words, extract_value_from_word,
+    extract_value_from_words, insert_bridge_value_into_word, insert_value_into_word,
+    split_packed_index, Packed, PackedIter,
 };
 pub use precisions::*;
 pub use random::{iter_random_values, iter_var_len_random_values, splitmix64};
@@ -35,12 +42,16 @@ pub use variable_word::VariableWord;
 pub mod prelude {
     pub use crate::bits::*;
     pub use crate::constants::{One, Zero};
+    pub use crate::correction::{sigma, tau, x_div_expm1};
     pub use crate::estimator::CardinalityEstimator;
+    pub use crate::hasher::HasherType;
     pub use crate::matrix::Matrix;
     pub use crate::number::{FloatOps, Number, PositiveInteger};
+    pub use crate::optimize::bisect_root;
     pub use crate::packed::{
-        extract_bridge_value_from_words, extract_value_from_words, split_packed_index, Packed,
-        PackedIter,
+        extract_bridge_value_from_word, extract_bridge_value_from_words, extract_value_from_word,
+        extract_value_from_words, insert_bridge_value_into_word, insert_value_into_word,
+        split_packed_index, Packed, PackedIter,
     };
     pub use crate::precisions::*;
     pub use crate::random::{iter_random_values, iter_var_len_random_values, splitmix64};

@@ -34,7 +34,7 @@ use core::mem::size_of;
 /// whether the value extracted from the word is a valid value for the register type.
 /// This is okay because we apply a mask to the value, and it is not possible for the
 /// value we cast to be greater than the mask.
-fn extract_value_from_word<V: VariableWord>(word: u64, offset: u8) -> V::Word {
+pub fn extract_value_from_word<V: VariableWord>(word: u64, offset: u8) -> V::Word {
     debug_assert!(
         offset + V::NUMBER_OF_BITS <= 64,
         "The offset ({offset} + {}) should be less than or equal to 64",
@@ -50,7 +50,7 @@ fn extract_value_from_word<V: VariableWord>(word: u64, offset: u8) -> V::Word {
 /// * `word` - The word in which the value is to be inserted.
 /// * `offset` - The offset (from the right) at which the value is to be inserted.
 /// * `value` - The value to be inserted.
-fn insert_value_into_word<V: VariableWord>(word: &mut u64, offset: u8, value: u64) {
+pub fn insert_value_into_word<V: VariableWord>(word: &mut u64, offset: u8, value: u64) {
     debug_assert!(
         offset + V::NUMBER_OF_BITS <= 64,
         "The offset ({offset} + {}) should be less than or equal to 64",
@@ -73,7 +73,7 @@ fn insert_value_into_word<V: VariableWord>(word: &mut u64, offset: u8, value: u6
 ///
 /// # Safety
 /// * The method converts in an unchecked manner the value from a `u64` to a `V::Word`.
-fn extract_bridge_value_from_word<V: VariableWord>(
+pub fn extract_bridge_value_from_word<V: VariableWord>(
     lower_word: u64,
     upper_word: u64,
     offset: u8,
@@ -97,8 +97,16 @@ fn extract_bridge_value_from_word<V: VariableWord>(
     unsafe { V::unchecked_from_u64(word) }
 }
 
+/// Inserts a bridge value into a pair of adjacent words at the given bit offset.
+///
+/// # Arguments
+/// * `lower_word` - The lower word (holds the high bits of the packed value).
+/// * `upper_word` - The upper word (holds the low bits of the packed value).
+/// * `offset` - The offset (from the right) at which the value starts in `lower_word`. The value
+///   crosses the word boundary, so `offset + V::NUMBER_OF_BITS > 64`.
+/// * `value` - The value to insert, masked into the two words.
 #[inline]
-fn insert_bridge_value_into_word<V: VariableWord>(
+pub fn insert_bridge_value_into_word<V: VariableWord>(
     lower_word: &mut u64,
     upper_word: &mut u64,
     offset: u8,
