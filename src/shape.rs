@@ -42,7 +42,7 @@ pub trait PackedShape<B: Bits>: Precision {
 }
 
 /// Implements [`PackedShape`] for a single `(Precision, Bits)` pair. Called by
-/// [`impl_packed_shape_for_precision!`] and by downstream extension-trait macros.
+/// [`crate::impl_packed_shape_for_precision`] and by downstream extension-trait macros.
 #[macro_export]
 macro_rules! impl_packed_shape_pair {
     ($precision:ident, $exp:expr, $bits_ty:ident, $bits:expr) => {

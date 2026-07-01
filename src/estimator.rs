@@ -6,6 +6,8 @@
 //! the intersection, difference and Jaccard estimates are derived from those two by inclusion and
 //! exclusion (clamped to remain non-negative).
 
+pub mod classical;
+
 use crate::constants::Zero;
 
 /// Estimates set cardinalities and the cardinalities of pairwise set relations.

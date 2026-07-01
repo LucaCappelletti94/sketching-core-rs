@@ -7,7 +7,7 @@ extern crate alloc;
 mod bits;
 mod constants;
 mod correction;
-mod estimator;
+pub mod estimator;
 mod hasher;
 mod matrix;
 mod number;
