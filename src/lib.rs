@@ -1,5 +1,4 @@
 #![doc = include_str!("../README.md")]
-
 #![cfg_attr(not(test), no_std)]
 
 #[cfg(feature = "alloc")]
@@ -45,6 +44,8 @@ pub mod prelude {
     };
     pub use crate::precisions::*;
     pub use crate::random::{iter_random_values, iter_var_len_random_values, splitmix64};
-    pub use crate::sketches::{inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError};
+    pub use crate::sketches::{
+        inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
+    };
     pub use crate::variable_word::VariableWord;
 }

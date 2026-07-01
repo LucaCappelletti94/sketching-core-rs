@@ -57,7 +57,10 @@ pub fn iter_var_len_random_values<V: VariableWord>(
         "The minimal size ({minimal_size}) must be less than or equal to the maximal size ({maximal_size})."
     );
     if let Some(mv) = maximal_value.as_ref() {
-        assert!(!mv.is_zero(), "The maximal value must be provided if the variable mask is zero.");
+        assert!(
+            !mv.is_zero(),
+            "The maximal value must be provided if the variable mask is zero."
+        );
     }
 
     let delta = maximal_size - minimal_size;
