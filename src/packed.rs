@@ -10,8 +10,6 @@
 //! packed array, especially in the case of bridge registers, i.e. registers that span two words.
 
 use crate::{Matrix, VariableWord, Zero};
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
@@ -311,22 +309,11 @@ impl<W: AsRef<[u64]> + AsMut<[u64]>, V: VariableWord> Packed<W, V> {
     }
 }
 
-impl<const N: usize, V: VariableWord> Default for Packed<[u64; N], V> {
+impl<W: Default, V: VariableWord> Default for Packed<W, V> {
     #[inline]
     fn default() -> Self {
         Self {
-            words: [0; N],
-            _phantom: PhantomData,
-        }
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<V: VariableWord> Default for Packed<Vec<u64>, V> {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            words: Vec::new(),
+            words: W::default(),
             _phantom: PhantomData,
         }
     }

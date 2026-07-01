@@ -15,6 +15,7 @@ mod optimize;
 mod packed;
 mod precisions;
 mod random;
+mod shape;
 mod sketches;
 mod variable_word;
 
@@ -33,6 +34,7 @@ pub use packed::{
 };
 pub use precisions::*;
 pub use random::{iter_random_values, iter_var_len_random_values, splitmix64};
+pub use shape::{PackedShape, Words};
 pub use sketches::{
     inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
 };
@@ -55,6 +57,7 @@ pub mod prelude {
     };
     pub use crate::precisions::*;
     pub use crate::random::{iter_random_values, iter_var_len_random_values, splitmix64};
+    pub use crate::shape::{PackedShape, Words};
     pub use crate::sketches::{
         inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
     };
