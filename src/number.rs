@@ -167,10 +167,7 @@ impl FloatOps for f64 {
         f64::from_le_bytes((u64::from(1023_u16 - u16::from(register)) << 52).to_le_bytes())
     }
     #[inline]
-    #[allow(
-        clippy::cast_sign_loss,
-        reason = "validated non-negative by debug_assert"
-    )]
+    #[allow(clippy::cast_sign_loss)]
     fn integer_exp2_minus_signed(register: i16) -> Self {
         debug_assert!(
             register > -1024,
