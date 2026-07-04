@@ -17,6 +17,7 @@ mod precisions;
 mod random;
 mod shape;
 mod sketches;
+pub mod sparse_value_list;
 mod variable_word;
 
 pub use bits::*;
@@ -37,6 +38,10 @@ pub use random::{iter_random_values, iter_var_len_random_values, splitmix64, Spl
 pub use shape::{PackedShape, Words};
 pub use sketches::{
     inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
+};
+pub use sparse_value_list::{
+    contains_value, insert_value, merge_metrics, merge_write, read_fixed_bits, union_count,
+    write_fixed_bits, SigBitsCode, SparseValueCodec, ValueInsertion, ValueIter,
 };
 pub use variable_word::VariableWord;
 
@@ -62,6 +67,10 @@ pub mod prelude {
     pub use crate::shape::{PackedShape, Words};
     pub use crate::sketches::{
         inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
+    };
+    pub use crate::sparse_value_list::{
+        contains_value, insert_value, merge_metrics, merge_write, read_fixed_bits, union_count,
+        write_fixed_bits, SigBitsCode, ValueInsertion, ValueIter,
     };
     pub use crate::variable_word::VariableWord;
 }

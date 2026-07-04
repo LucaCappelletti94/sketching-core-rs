@@ -3,6 +3,21 @@
 version = 4
 
 [[package]]
+name = "dsi-bitstream"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b1a854525fc27b5ed458f038740e56613e5b9d0c6af67d7b9dc1062157afb7"
+dependencies = [
+ "num-primitive",
+]
+
+[[package]]
+name = "num-primitive"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0178502a58a2514f927965f80216c0ea2533b5364061544ea8e09b79343d4183"
+
+[[package]]
 name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -60,6 +75,7 @@ dependencies = [
 name = "sketching-core"
 version = "0.5.0"
 dependencies = [
+ "dsi-bitstream",
  "paste",
  "serde",
 ]
