@@ -40,8 +40,9 @@ pub use sketches::{
     inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
 };
 pub use sparse_value_list::{
-    contains_value, insert_value, merge_metrics, merge_write, read_fixed_bits, union_count,
-    write_fixed_bits, SigBitsCode, SparseValueCodec, ValueInsertion, ValueIter,
+    contains_value, for_each_union_value, insert_value, merge_metrics, merge_write,
+    read_fixed_bits, union_count, write_fixed_bits, ListSlice, SigBitsCode, SparseValueCodec,
+    ValueInsertion, ValueIter,
 };
 pub use variable_word::VariableWord;
 
@@ -69,8 +70,9 @@ pub mod prelude {
         inclusion_exclusion_joint_sketch, HyperSpheresSketch, JointSketch, JointSketchError,
     };
     pub use crate::sparse_value_list::{
-        contains_value, insert_value, merge_metrics, merge_write, read_fixed_bits, union_count,
-        write_fixed_bits, SigBitsCode, ValueInsertion, ValueIter,
+        contains_value, for_each_union_value, insert_value, merge_metrics, merge_write,
+        read_fixed_bits, union_count, write_fixed_bits, ListSlice, SigBitsCode, ValueInsertion,
+        ValueIter,
     };
     pub use crate::variable_word::VariableWord;
 }

@@ -13,7 +13,7 @@
 //!
 //! The caller-facing type is `&[u8]` but the codec operates internally on the buffer viewed as a
 //! `&[u64]` word slice, so the byte buffer MUST be aligned to `align_of::<u64>()` and its length
-//! MUST be a multiple of `size_of::<u64>()`. HyperLogLog's register arrays (backed by `[u64; N]`
+//! MUST be a multiple of `size_of::<u64>()`. `HyperLogLog`'s register arrays (backed by `[u64; N]`
 //! internally) already satisfy both. `Vec<u8>` does not: use `Vec::<u64>::new()` and take a
 //! `bytemuck::cast_slice` view, or construct the buffer as `Box<[u64]>` and cast.
 //!
@@ -49,18 +49,19 @@ pub use dsi_bitstream::traits::{Endianness, BE, LE};
 #[inline]
 fn as_u64_slice(bytes: &[u8]) -> &[u64] {
     assert_eq!(
-        (bytes.as_ptr() as usize) % core::mem::align_of::<u64>(),
-        0,
-        "byte buffer must be aligned to u64"
-    );
-    assert_eq!(
         bytes.len() % core::mem::size_of::<u64>(),
         0,
         "byte buffer length must be a multiple of 8"
     );
-    // Safety: alignment and length are asserted above; `u8` -> `u64` reinterpret is well-defined
-    // for the same lifetime because both slices are borrowed immutably from the caller.
-    unsafe { core::slice::from_raw_parts(bytes.as_ptr().cast::<u64>(), bytes.len() / 8) }
+    // Safety: `align_to` guarantees the start of `aligned` is `u64`-aligned. The assert
+    // below turns a misaligned pointer into a panic rather than UB. `u64` has no invalid
+    // bit patterns, so reinterpreting aligned, size-checked bytes is sound.
+    let (prefix, aligned, suffix) = unsafe { bytes.align_to::<u64>() };
+    assert!(
+        prefix.is_empty() && suffix.is_empty(),
+        "byte buffer must be aligned to u64"
+    );
+    aligned
 }
 
 /// Reads the bit at index `bit` from the buffer, interpreted as big-endian `u64` words with the
@@ -327,13 +328,17 @@ where
         match (a.peek().copied(), b.peek().copied()) {
             (Some(x), Some(y)) => {
                 count += 1;
-                if x == y {
-                    a.next();
-                    b.next();
-                } else if x > y {
-                    a.next();
-                } else {
-                    b.next();
+                match x.cmp(&y) {
+                    core::cmp::Ordering::Equal => {
+                        a.next();
+                        b.next();
+                    }
+                    core::cmp::Ordering::Greater => {
+                        a.next();
+                    }
+                    core::cmp::Ordering::Less => {
+                        b.next();
+                    }
                 }
             }
             (Some(_), None) => {
@@ -349,17 +354,28 @@ where
     }
 }
 
-/// Calls `f(is_first, value)` for each distinct value of the union of two descending exact
+/// A borrowed descriptor for a sorted-descending exact value list stored in a byte buffer.
+///
+/// Groups the `(buffer, start_bit, count)` triple common to every multi-list operation.
+/// `buffer` must be `u64`-aligned and its length a multiple of eight; see the module
+/// documentation for the full alignment contract.
+#[derive(Debug, Clone, Copy)]
+pub struct ListSlice<'a> {
+    /// Byte buffer containing the encoded list.
+    pub buffer: &'a [u8],
+    /// Bit offset of the first codeword within `buffer`.
+    pub start_bit: u32,
+    /// Number of values stored in the list.
+    pub count: u32,
+}
+
+/// Calls `callback(is_first, value)` for each distinct value of the union of two descending exact
 /// streams, in descending order, by a two-pointer merge. Allocation-free.
 pub fn for_each_union_value<E, C, F>(
-    buffer_a: &[u8],
-    start_a: u32,
-    count_a: u32,
-    buffer_b: &[u8],
-    start_b: u32,
-    count_b: u32,
+    list_a: ListSlice<'_>,
+    list_b: ListSlice<'_>,
     code: C,
-    mut f: F,
+    mut callback: F,
 ) where
     E: Endianness,
     C: DynamicCodeRead + Copy,
@@ -367,35 +383,39 @@ pub fn for_each_union_value<E, C, F>(
     for<'r> BufBitReader<E, MemWordReader<u64, &'r [u64], true>>:
         CodesRead<E> + BitSeek + BitRead<E>,
 {
-    let mut a = ValueIter::<E, C>::new(buffer_a, start_a, count_a, code).peekable();
-    let mut b = ValueIter::<E, C>::new(buffer_b, start_b, count_b, code).peekable();
+    let mut iter_a =
+        ValueIter::<E, C>::new(list_a.buffer, list_a.start_bit, list_a.count, code).peekable();
+    let mut iter_b =
+        ValueIter::<E, C>::new(list_b.buffer, list_b.start_bit, list_b.count, code).peekable();
     let mut first = true;
     loop {
-        let value = match (a.peek().copied(), b.peek().copied()) {
-            (Some(x), Some(y)) => {
-                if x == y {
-                    a.next();
-                    b.next();
+        let value = match (iter_a.peek().copied(), iter_b.peek().copied()) {
+            (Some(x), Some(y)) => match x.cmp(&y) {
+                core::cmp::Ordering::Equal => {
+                    iter_a.next();
+                    iter_b.next();
                     x
-                } else if x > y {
-                    a.next();
+                }
+                core::cmp::Ordering::Greater => {
+                    iter_a.next();
                     x
-                } else {
-                    b.next();
+                }
+                core::cmp::Ordering::Less => {
+                    iter_b.next();
                     y
                 }
-            }
+            },
             (Some(x), None) => {
-                a.next();
+                iter_a.next();
                 x
             }
             (None, Some(y)) => {
-                b.next();
+                iter_b.next();
                 y
             }
             (None, None) => return,
         };
-        f(first, value);
+        callback(first, value);
         first = false;
     }
 }
@@ -423,12 +443,16 @@ where
     let mut bits = 0u32;
     let mut previous = 0u64;
     for_each_union_value::<E, C, _>(
-        buffer_a,
-        start_a,
-        count_a,
-        buffer_b,
-        start_b,
-        count_b,
+        ListSlice {
+            buffer: buffer_a,
+            start_bit: start_a,
+            count: count_a,
+        },
+        ListSlice {
+            buffer: buffer_b,
+            start_bit: start_b,
+            count: count_b,
+        },
         code,
         |first, value| {
             bits += if first {
@@ -447,12 +471,8 @@ where
 /// starting at `dest_start_bit`, returning the number of distinct values written. `dest` must hold
 /// at least `dest_start_bit + merge_metrics(..).1` bits and be disjoint from both inputs.
 pub fn merge_write<E, C>(
-    buffer_a: &[u8],
-    start_a: u32,
-    count_a: u32,
-    buffer_b: &[u8],
-    start_b: u32,
-    count_b: u32,
+    list_a: ListSlice<'_>,
+    list_b: ListSlice<'_>,
     dest: &mut [u8],
     dest_start_bit: u32,
     code: C,
@@ -467,21 +487,12 @@ where
     let mut count = 0u32;
     let mut pos = dest_start_bit;
     let mut previous = 0u64;
-    for_each_union_value::<E, C, _>(
-        buffer_a,
-        start_a,
-        count_a,
-        buffer_b,
-        start_b,
-        count_b,
-        code,
-        |first, value| {
-            let payload = if first { value } else { previous - value };
-            pos = write_code_at::<E, C>(dest, pos, payload, &code);
-            previous = value;
-            count += 1;
-        },
-    );
+    for_each_union_value::<E, C, _>(list_a, list_b, code, |first, value| {
+        let payload = if first { value } else { previous - value };
+        pos = write_code_at::<E, C>(dest, pos, payload, &code);
+        previous = value;
+        count += 1;
+    });
     count
 }
 
@@ -498,6 +509,11 @@ pub enum ValueInsertion {
 
 /// Inserts `value` into the sorted (descending) exact list of `count` values stored in `buffer`
 /// starting at `start_bit`, splicing it in place. Allocation-free.
+///
+/// # Panics
+///
+/// Panics if `count` is non-zero and the list contains no value greater than the insertion
+/// point, which indicates a corrupted or inconsistently maintained list.
 pub fn insert_value<E, C>(
     buffer: &mut [u8],
     start_bit: u32,
@@ -553,9 +569,8 @@ where
 
     match next {
         None => {
-            let predecessor = match before {
-                Some(v) => v,
-                None => panic!("a non-empty list always has a predecessor here"),
+            let Some(predecessor) = before else {
+                panic!("a non-empty list always has a predecessor here")
             };
             let gap = predecessor - value;
             let extra = code.len(gap) as u32;
@@ -849,12 +864,16 @@ mod tests {
 
         let mut dest = aligned_buffer(8 * 8);
         let written = merge_write::<BE, _>(
-            ab,
-            0,
-            count_a,
-            bb,
-            0,
-            count_b,
+            ListSlice {
+                buffer: ab,
+                start_bit: 0,
+                count: count_a,
+            },
+            ListSlice {
+                buffer: bb,
+                start_bit: 0,
+                count: count_b,
+            },
             as_bytes_mut(&mut dest),
             0,
             g,
@@ -871,9 +890,9 @@ mod tests {
     fn test_start_bit_reserves_preamble() {
         // The codec must not touch bits below `start_bit`, and it must decode correctly when read
         // back with the same `start_bit`.
-        let g = ConstCode::<{ code_consts::GAMMA }>;
         const PREAMBLE_BITS: u32 = 24;
-        const MAGIC: u64 = 0xABCDEF;
+        const MAGIC: u64 = 0x00AB_CDEF;
+        let g = ConstCode::<{ code_consts::GAMMA }>;
 
         let mut backing = aligned_buffer(32 * 8);
         write_fixed_bits(as_bytes_mut(&mut backing), 0, PREAMBLE_BITS, MAGIC);

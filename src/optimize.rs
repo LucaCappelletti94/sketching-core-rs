@@ -21,9 +21,9 @@ pub fn bisect_root<F: Fn(f64) -> f64>(f: F, mut a: f64, mut b: f64, rel_tol: f64
         let width = b - a;
         let scale = a.abs().max(b.abs()).max(1.0);
         if width.abs() <= rel_tol * scale {
-            return 0.5 * (a + b);
+            return f64::midpoint(a, b);
         }
-        let mid = 0.5 * (a + b);
+        let mid = f64::midpoint(a, b);
         let fmid = f(mid);
         if fmid == 0.0 {
             return mid;
@@ -41,5 +41,5 @@ pub fn bisect_root<F: Fn(f64) -> f64>(f: F, mut a: f64, mut b: f64, rel_tol: f64
             return a;
         }
     }
-    0.5 * (a + b)
+    f64::midpoint(a, b)
 }
