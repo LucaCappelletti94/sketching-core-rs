@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     strategy:
       matrix:
@@ -41,7 +41,7 @@ jobs:
         run: cargo test --features serde
 
   msrv:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -58,7 +58,7 @@ jobs:
         run: cargo check --all-features
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -79,7 +79,7 @@ jobs:
         run: cargo clippy --all-features --all-targets -- -D warnings
 
   mutants:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
