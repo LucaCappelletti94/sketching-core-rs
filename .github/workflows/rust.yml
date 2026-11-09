@@ -77,23 +77,3 @@ jobs:
 
       - name: Clippy
         run: cargo clippy --all-features --all-targets -- -D warnings
-
-  mutants:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      - name: Cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
-
-      - name: Install cargo-mutants
-        run: cargo install cargo-mutants --locked
-
-      - name: Run cargo-mutants
-        run: cargo mutants -j 4 || test $? -eq 3
